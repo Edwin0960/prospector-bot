@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PROSPECTOR.AI — Busca clientes con IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --bg2: #0f0f17;
+  --bg3: #111;
+  --border: #1a1a2e;
+  --green: #00ff88;
+  --yellow: #ffd166;
+  --blue: #4488cc;
+  --red: #ff6b6b;
+  --text: #e0e0e0;
+  --muted: #555;
+  --dim: #333;
+}
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+/* NAV */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.95);
+  position: sticky; top: 0; z-index: 50;
+}
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--green); }
+.logo span { color: #222; }
+.badge { font-size: 10px; color: #1a4a2e; }
+.badge b { color: var(--green); }
+
+/* TABS */
+.tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 28px; }
+.tab { padding: 12px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: #444; font-family: 'DM Mono', monospace; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-count { color: var(--green); margin-left: 4px; }
+
+/* MAIN */
+main { padding: 28px; max-width: 900px; margin: 0 auto; }
+.pane { display: none; flex-direction: column; gap: 20px; }
+.pane.active { display: flex; }
+
+/* INPUTS */
+.label { font-size: 10px; color: #444; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+input, textarea {
+  background: var(--bg3); border: 1px solid #222; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px; padding: 12px;
+  width: 100%; outline: none; transition: border-color 0.2s;
+}
+input:focus, textarea:focus { border-color: var(--green); }
+input::placeholder { color: #333; }
+
+/* CHIPS */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 6px 14px; border: 1px solid #222; background: var(--bg3);
+  color: #555; font-size: 11px; cursor: pointer;
+  transition: all 0.15s; font-family: 'DM Mono', monospace;
+}
+.chip.on { border-color: var(--green); color: var(--green); background: #001a0d; }
+.chip:hover:not(.on) { border-color: #444; color: #aaa; }
+.chip-count { font-size: 11px; color: #333; margin-top: 8px; }
+
+/* BUTTONS */
+.btn { border: none; cursor: pointer; font-family: 'DM Mono', monospace; transition: all 0.2s; }
+.btn-green { background: var(--green); color: #0a0a0f; padding: 13px 26px; font-size: 13px; font-weight: 500; letter-spacing: 1px; }
+.btn-green:hover { background: #00cc6a; transform: translateY(-1px); }
+.btn-green:disabled { background: #1a3329; color: #2a5a3a; cursor: not-allowed; transform: none; }
+.btn-yellow { background: var(--yellow); color: #0a0a0f; padding: 13px 26px; font-size: 13px; font-weight: 500; letter-spacing: 1px; }
+.btn-yellow:hover { background: #e6bc5a; transform: translateY(-1px); }
+.btn-yellow:disabled { background: #3a2e00; color: #5a4a00; cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: #555; border: 1px solid #222; padding: 8px 16px; font-size: 12px; }
+.btn-ghost:hover { border-color: var(--green); color: var(--green); }
+.btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn-sm { padding: 6px 12px; font-size: 11px; background: var(--bg3); border: 1px solid var(--border); color: #555; white-space: nowrap; }
+.btn-sm:hover { border-color: #444; color: #aaa; }
+.btn-sm.blue { border-color: #1a3a6a; color: var(--blue); }
+.btn-sm.blue:hover { background: #0a1a2a; color: #88bbff; }
+.btn-sm.sent { border-color: #1a4a2e; color: var(--green); background: #001a0d; cursor: default; }
+
+/* INFO BOX */
+.infobox { background: var(--bg2); border: 1px solid var(--border); padding: 18px 20px; }
+.infobox.green { border-left: 3px solid var(--green); }
+.infobox.yellow { border-left: 3px solid var(--yellow); }
+.infobox.blue { border-left: 3px solid var(--blue); }
+.infobox-title { font-size: 10px; letter-spacing: 3px; margin-bottom: 10px; }
+.infobox.green .infobox-title { color: var(--green); }
+.infobox.yellow .infobox-title { color: var(--yellow); }
+.infobox.blue .infobox-title { color: var(--blue); }
+.infobox p { font-size: 12px; color: var(--muted); line-height: 1.9; }
+
+/* PROGRESS */
+.progress { font-size: 12px; color: var(--green); animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* RESULTS */
+.results-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.results-meta { font-size: 11px; color: #444; letter-spacing: 2px; }
+.card { background: var(--bg2); border: 1px solid var(--border); padding: 20px; animation: fadeUp 0.3s ease forwards; transition: border-color 0.2s; }
+.card:hover { border-color: #2a2a4a; }
+.card.dimmed { opacity: 0.6; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 10px; }
+.card-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
+.card-cat { font-size: 10px; color: #333; margin-top: 2px; }
+.card-badges { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.badge-pot { font-size: 10px; padding: 3px 10px; border: 1px solid; letter-spacing: 1px; }
+.badge-sent { font-size: 10px; color: var(--green); }
+.card-desc { font-size: 12px; color: #555; margin-bottom: 10px; }
+.card-reason { background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; font-size: 12px; color: #444; margin-bottom: 14px; }
+.card-reason span { color: var(--green); }
+.card-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.card-income { font-size: 11px; color: var(--green); }
+.card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 60px 0; color: #333; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty p { font-size: 13px; margin-bottom: 16px; }
+
+/* MODAL */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+.modal { background: var(--bg2); border: 1px solid #2a2a4a; padding: 28px; max-width: 560px; width: 100%; }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; margin-bottom: 6px; }
+.modal-sub { font-size: 11px; color: #333; margin-bottom: 20px; }
+.modal-field { margin-bottom: 14px; }
+.modal-field .label { margin-bottom: 6px; }
+.modal-value { font-size: 12px; padding: 8px 12px; border: 1px solid #222; background: var(--bg3); line-height: 1.6; white-space: pre-wrap; max-height: 180px; overflow-y: auto; color: #666; }
+.modal-value.highlight { color: var(--blue); border-color: #1a3a6a; background: #0a1a2a; }
+
+/* SENDING STATUS */
+.sending-bar { background: #001a0d; border: 1px solid #1a4a2e; padding: 12px 16px; font-size: 12px; color: var(--green); display: flex; align-items: center; gap: 10px; }
+
+@media(max-width:600px) {
+  main { padding: 16px; }
+  nav { padding: 14px 16px; }
+  .tabs { padding: 0 16px; }
+  .tab { padding: 10px 14px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">PROSPECTOR<span>.AI</span></div>
+  <div class="badge"><b>● EN LÍNEA</b> · Claude Sonnet</div>
+</nav>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('search')">/ búsqueda</button>
+  <button class="tab" onclick="showTab('results')" id="tab-results">/ prospectos</button>
+  <button class="tab" onclick="showTab('config')">/ mis datos</button>
+</div>
+
+<main>
+
+  <!-- SEARCH -->
+  <div class="pane active" id="pane-search">
+    <div class="infobox yellow">
+      <div class="infobox-title">ANTES DE BUSCAR</div>
+      <p>Configura tu nombre y teléfono en <b style="color:var(--yellow);cursor:pointer" onclick="showTab('config')">"mis datos"</b> para que los emails lleguen con tu información.</p>
+    </div>
+
+    <div>
+      <div class="label">Ciudad objetivo</div>
+      <input id="city" placeholder="Ej: Caracas, Bogotá, Madrid, Miami..." onkeydown="if(event.key==='Enter') search()"/>
+    </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="label" style="margin:0">Categorías</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="selectAll()">todo</button>
+          <button class="btn btn-ghost" onclick="clearAll()">limpiar</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="chip-count" id="chip-count">0 categorías seleccionadas</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" id="btn-search" onclick="search()">→ BUSCAR PROSPECTOS</button>
+      <div class="progress" id="progress" style="display:none">Analizando mercado con IA...</div>
+    </div>
+
+    <div class="infobox green">
+      <div class="infobox-title">FLUJO COMPLETO</div>
+      <p>
+        01 → Buscas negocios por ciudad y categoría<br/>
+        02 → La IA identifica cuáles tienen más potencial<br/>
+        03 → Un clic genera un email personalizado para cada uno<br/>
+        04 → El bot te muestra el email y te pregunta si enviarlo<br/>
+        05 → Se abre tu Gmail listo — tú das el último clic<br/>
+        06 → Cuando respondan, entras tú a cerrar la reunión
+      </p>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="pane" id="pane-results">
+    <div class="results-header">
+      <div class="results-meta" id="results-meta">0 NEGOCIOS</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-yellow" id="btn-bulk" onclick="bulkSend()" style="display:none">→ ENVIAR A LOS MEJORES</button>
+        <button class="btn btn-ghost" onclick="newSearch()">nueva búsqueda</button>
+      </div>
+    </div>
+    <div id="sending-bar" style="display:none" class="sending-bar">
+      <div class="progress" style="display:inline">●</div>
+      <span id="sending-text">Generando emails...</span>
+    </div>
+    <div id="results-list"></div>
+    <div class="empty" id="empty-results">
+      <div class="empty-icon">◎</div>
+      <p>Haz una búsqueda primero</p>
+      <button class="btn btn-ghost" onclick="showTab('search')">ir a búsqueda →</button>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="pane" id="pane-config">
+    <div class="label" style="font-size:12px;color:#444">TUS DATOS — aparecen en cada email generado</div>
+
+    <div>
+      <div class="label">Tu nombre</div>
+      <input id="cfg-name" placeholder="Ej: Carlos Rodríguez" oninput="saveConfig()"/>
+    </div>
+    <div>
+      <div class="label">Tu teléfono / WhatsApp</div>
+      <input id="cfg-phone" placeholder="Ej: +58 412 000 0000" oninput="saveConfig()"/>
+    </div>
+    <div>
+      <div class="label">Tu email</div>
+      <input id="cfg-email" placeholder="Ej: carlos@gmail.com" oninput="saveConfig()"/>
+    </div>
+
+    <div class="infobox blue">
+      <div class="infobox-title">CÓMO FUNCIONA EL EMAIL</div>
+      <p>
+        ● Das clic en "enviar email" en cualquier negocio<br/>
+        ● La IA genera un email personalizado para ese negocio<br/>
+        ● Te muestra el email completo y te pregunta si proceder<br/>
+        ● Si confirmas, se abre tu Gmail con todo listo<br/>
+        ● Tú das el último clic en Enviar — siempre tienes control<br/>
+        ● También puedes enviar a todos los de potencial ALTO de un golpe
+      </p>
+    </div>
+
+    <button class="btn btn-green" onclick="showTab('search')">→ GUARDAR Y BUSCAR</button>
+  </div>
+
+</main>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Confirmar envío</div>
+    <div class="modal-sub" id="modal-sub">Revisa el email antes de abrir Gmail</div>
+    <div class="modal-field" id="modal-to-wrap">
+      <div class="label">PARA</div>
+      <div class="modal-value highlight" id="modal-to"></div>
+    </div>
+    <div class="modal-field">
+      <div class="label">ASUNTO</div>
+      <div class="modal-value" id="modal-subject"></div>
+    </div>
+    <div class="modal-field">
+      <div class="label">MENSAJE</div>
+      <div class="modal-value" id="modal-body"></div>
+    </div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-green" id="modal-confirm">→ ABRIR EN GMAIL</button>
+      <button class="btn btn-ghost" onclick="closeModal()">cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  "Clínicas y salud","Estéticas y belleza","Restaurantes y comida",
+  "Inmobiliarias","Tiendas y retail","Academias y cursos",
+  "Abogados y servicios legales","Contadores y finanzas",
+  "Gimnasios y fitness","Hoteles y turismo","Mecánicas y autos",
+  "Ferreterías y construcción","Farmacias","Veterinarias",
+  "Agencias de marketing","Consultorías"
+];
+
+let selected = [];
+let results = [];
+let sentIndexes = [];
+let generatingFor = null;
+let sendingBulk = false;
+let cfg = { name: "", phone: "", email: "" };
+
+// Init chips
+const chipsEl = document.getElementById("chips");
+CATEGORIES.forEach(cat => {
+  const btn = document.createElement("button");
+  btn.className = "btn chip";
+  btn.textContent = cat;
+  btn.onclick = () => toggleChip(cat, btn);
+  chipsEl.appendChild(btn);
+});
+
+function toggleChip(cat, btn) {
+  if (selected.includes(cat)) {
+    selected = selected.filter(c => c !== cat);
+    btn.classList.remove("on");
+  } else {
+    selected.push(cat);
+    btn.classList.add("on");
+  }
+  document.getElementById("chip-count").textContent = selected.length + " categorías seleccionadas";
+}
+
+function selectAll() {
+  selected = [...CATEGORIES];
+  document.querySelectorAll(".chip").forEach(b => b.classList.add("on"));
+  document.getElementById("chip-count").textContent = selected.length + " categorías seleccionadas";
+}
+
+function clearAll() {
+  selected = [];
+  document.querySelectorAll(".chip").forEach(b => b.classList.remove("on"));
+  document.getElementById("chip-count").textContent = "0 categorías seleccionadas";
+}
+
+function saveConfig() {
+  cfg.name = document.getElementById("cfg-name").value;
+  cfg.phone = document.getElementById("cfg-phone").value;
+  cfg.email = document.getElementById("cfg-email").value;
+}
+
+function showTab(id) {
+  document.querySelectorAll(".pane").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("pane-" + id).classList.add("active");
+  event && event.target && event.target.classList.add("active");
+  // fix active tab manually
+  document.querySelectorAll(".tab").forEach(t => {
+    if (t.getAttribute("onclick") && t.getAttribute("onclick").includes(id)) t.classList.add("active");
+  });
+}
+
+function updateTabCount() {
+  const tab = document.getElementById("tab-results");
+  const count = results.length;
+  tab.innerHTML = count > 0 ? `/ prospectos <span class="tab-count">(${count})</span>` : "/ prospectos";
+}
+
+async function search() {
+  const city = document.getElementById("city").value.trim();
+  if (!city) { alert("Por favor ingresa una ciudad."); return; }
+  if (selected.length === 0) { alert("Selecciona al menos una categoría."); return; }
+
+  document.getElementById("btn-search").disabled = true;
+  document.getElementById("progress").style.display = "block";
+  results = []; sentIndexes = [];
+  renderResults([]);
+
+  const cats = selected.join(", ");
+  const prompt = `Eres un asistente de prospección de negocios. Genera una lista de 15 tipos de negocios REALES y específicos que típicamente existen en ${city} para las categorías: ${cats}.
+
+Para cada negocio genera datos REALISTAS y VARIADOS. Responde SOLO con JSON válido, sin texto adicional, sin backticks:
+
+{"negocios":[{"nombre":"Nombre del negocio","categoria":"categoría","descripcion":"qué hace en una línea","potencial":"alto|medio|bajo","razon":"por qué necesita ayuda con ventas","emailEstimado":"info@ejemplo.com","buscarEn":"término para Google Maps","estimadoIngreso":"$X - $Y por mes"}]}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || "").join("");
+    const clean = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    results = parsed.negocios || [];
+    renderResults(results);
+    updateTabCount();
+    showTab("results");
+  } catch(e) {
+    alert("Error al procesar. Intenta de nuevo.");
+  }
+
+  document.getElementById("btn-search").disabled = false;
+  document.getElementById("progress").style.display = "none";
+}
+
+function potColor(p) {
+  return { alto: "#00ff88", medio: "#ffd166", bajo: "#ff6b6b" }[p] || "#aaa";
+}
+
+function renderResults(list) {
+  const el = document.getElementById("results-list");
+  const empty = document.getElementById("empty-results");
+  const meta = document.getElementById("results-meta");
+  const bulkBtn = document.getElementById("btn-bulk");
+  const topCount = list.filter(b => b.potencial === "alto").length;
+
+  if (list.length === 0) {
+    el.innerHTML = "";
+    empty.style.display = "block";
+    bulkBtn.style.display = "none";
+    meta.textContent = "0 NEGOCIOS";
+    return;
+  }
+
+  empty.style.display = "none";
+  meta.textContent = `${list.length} NEGOCIOS · ${topCount} POTENCIAL ALTO · ${sentIndexes.length} ENVIADOS`;
+  bulkBtn.style.display = topCount > 0 ? "block" : "none";
+  bulkBtn.textContent = `→ ENVIAR A LOS ${topCount} MEJORES`;
+
+  el.innerHTML = list.map((biz, i) => {
+    const pc = potColor(biz.potencial);
+    const isSent = sentIndexes.includes(i);
+    const isGen = generatingFor === i;
+    return `
+    <div class="card ${isSent ? 'dimmed' : ''}" style="margin-bottom:12px;animation-delay:${i*0.04}s">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${biz.nombre}</div>
+          <div class="card-cat">${biz.categoria} · ${document.getElementById("city").value}</div>
+        </div>
+        <div class="card-badges">
+          ${isSent ? '<span class="badge-sent">✓ enviado</span>' : ''}
+          <span class="badge-pot" style="color:${pc};border-color:${pc}">${(biz.potencial||'').toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="card-desc">${biz.descripcion}</div>
+      <div class="card-reason"><span>↳</span> ${biz.razon}</div>
+      <div class="card-footer">
+        <div class="card-income">${biz.estimadoIngreso}</div>
+        <div class="card-actions">
+          <button class="btn btn-sm" onclick="openMaps('${encodeURIComponent(biz.buscarEn)}')">Maps →</button>
+          <button class="btn btn-sm" onclick="openIG('${encodeURIComponent(biz.nombre)}')">Instagram →</button>
+          <button class="btn btn-sm blue ${isSent ? 'sent' : ''}" id="email-btn-${i}"
+            onclick="${isSent ? '' : `sendEmail(${i})`}"
+            ${isGen ? 'disabled' : ''}>
+            ${isSent ? '✓ enviado' : isGen ? 'generando...' : '✉ enviar email'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function openMaps(term) {
+  const city = document.getElementById("city").value;
+  window.open(`https://www.google.com/maps/search/${term}+en+${encodeURIComponent(city)}`, "_blank");
+}
+
+function openIG(name) {
+  window.open(`https://www.instagram.com/explore/search/keyword/?q=${name}`, "_blank");
+}
+
+async function generateEmail(biz) {
+  const name = cfg.name || "[TU NOMBRE]";
+  const phone = cfg.phone || "[TU TELÉFONO]";
+  const city = document.getElementById("city").value;
+
+  const prompt = `Eres un experto en ventas B2B. Redacta un email profesional, cálido y persuasivo en español para contactar a "${biz.nombre}", negocio de "${biz.categoria}" en ${city}.
+
+Contexto: ${biz.razon}
+Remitente: ${name}, especialista en ventas y atención al cliente por WhatsApp y teléfono. Trabaja por comisión, sin costo fijo.
+Objetivo: conseguir una videollamada o llamada de 15 minutos.
+
+El email debe:
+- Ser breve (máximo 130 palabras)
+- Mencionar algo específico del tipo de negocio
+- Proponer una videollamada concreta esta semana
+- Terminar con firma: ${name} | ${phone}
+- Primera línea: "ASUNTO: [asunto llamativo aquí]"
+
+Responde SOLO con el texto del email, sin explicaciones adicionales.`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 400,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.content.map(i => i.text || "").join("").trim();
+}
+
+async function sendEmail(idx) {
+  const biz = results[idx];
+  generatingFor = idx;
+  renderResults(results);
+
+  try {
+    const emailText = await generateEmail(biz);
+    const lines = emailText.split("\n");
+    const subjectLine = lines.find(l => l.toUpperCase().startsWith("ASUNTO:")) || "";
+    const subject = subjectLine.replace(/ASUNTO:\s*/i, "").trim() || `Propuesta para ${biz.nombre}`;
+    const body = lines.filter(l => !l.toUpperCase().startsWith("ASUNTO:")).join("\n").trim();
+
+    generatingFor = null;
+    showModal({
+      title: `Email para ${biz.nombre}`,
+      sub: "Revisa antes de enviar — se abrirá tu Gmail",
+      to: biz.emailEstimado,
+      subject, body,
+      onConfirm: () => {
+        const mailto = `mailto:${biz.emailEstimado}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailto, "_blank");
+        sentIndexes.push(idx);
+        closeModal();
+        renderResults(results);
+      }
+    });
+  } catch(e) {
+    generatingFor = null;
+    alert("Error generando email. Intenta de nuevo.");
+    renderResults(results);
+  }
+}
+
+async function bulkSend() {
+  const top = results.filter(b => b.potencial === "alto");
+  if (top.length === 0) return;
+
+  showModal({
+    title: `¿Enviar a los ${top.length} mejores?`,
+    sub: "La IA generará un email personalizado para cada uno. Tú confirmas cada envío.",
+    to: null,
+    subject: `${top.length} negocios de potencial ALTO`,
+    body: top.map(b => `· ${b.nombre} (${b.categoria})`).join("\n"),
+    onConfirm: async () => {
+      closeModal();
+      document.getElementById("sending-bar").style.display = "flex";
+      for (let i = 0; i < top.length; i++) {
+        const biz = top[i];
+        const idx = results.indexOf(biz);
+        document.getElementById("sending-text").textContent = `Generando email para ${biz.nombre}... (${i+1}/${top.length})`;
+        try {
+          const emailText = await generateEmail(biz);
+          const lines = emailText.split("\n");
+          const subjectLine = lines.find(l => l.toUpperCase().startsWith("ASUNTO:")) || "";
+          const subject = subjectLine.replace(/ASUNTO:\s*/i, "").trim() || `Propuesta para ${biz.nombre}`;
+          const body = lines.filter(l => !l.toUpperCase().startsWith("ASUNTO:")).join("\n").trim();
+          window.open(`mailto:${biz.emailEstimado}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+          sentIndexes.push(idx);
+          renderResults(results);
+        } catch(e) {}
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      document.getElementById("sending-bar").style.display = "none";
+    }
+  });
+}
+
+function showModal({ title, sub, to, subject, body, onConfirm }) {
+  document.getElementById("modal-title").textContent = title;
+  document.getElementById("modal-sub").textContent = sub;
+  document.getElementById("modal-subject").textContent = subject;
+  document.getElementById("modal-body").textContent = body;
+  const toWrap = document.getElementById("modal-to-wrap");
+  if (to) {
+    document.getElementById("modal-to").textContent = to;
+    toWrap.style.display = "block";
+  } else {
+    toWrap.style.display = "none";
+  }
+  const btn = document.getElementById("modal-confirm");
+  btn.textContent = to ? "→ ABRIR EN GMAIL" : "→ SÍ, PROCEDER";
+  btn.onclick = onConfirm;
+  document.getElementById("modal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+function newSearch() {
+  results = []; sentIndexes = [];
+  renderResults([]);
+  updateTabCount();
+  showTab("search");
+}
+
+// Close modal on overlay click
+document.getElementById("modal").addEventListener("click", function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
